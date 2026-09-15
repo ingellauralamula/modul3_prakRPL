@@ -6,3 +6,4 @@ hasil=angka1+angka2
 
 print(f"status: Setup Berhasil")
 print(f"Hasil Penjumblahan:{hasil}")
+
