@@ -9,63 +9,166 @@ class BukuController:
         self.model = BukuModel()
         self.view = BukuView()
 
-        # Binding (mengikat) tombol di View dengan fungsi di Controller
-        self.view.btn_simpan.configure(command=self.simpan_data)
+        # Menghubungkan tombol dengan fungsi Controller
+        self.view.btn_simpan.configure(
+            command=self.simpan_data
+        )
+        self.view.btn_update.configure(
+            command=self.perbarui_data
+        )
+        self.view.btn_delete.configure(
+            command=self.hapus_data
+        )
 
-        # Memuat data ke tabel saat aplikasi pertama kali dibuka
+        # Memuat data saat aplikasi dibuka
         self.muat_data_tabel()
 
     def muat_data_tabel(self):
-        # Mengosongkan isi tabel di View terlebih dahulu
+        # Mengosongkan tabel
         for item in self.view.tabel.get_children():
             self.view.tabel.delete(item)
 
-        # Mengambil data dari Model (database)
+        # Mengambil data dari Model
         data_buku = self.model.get_all_buku()
 
-        # Memasukkan data baru ke dalam tabel View
+        # Menampilkan data ke tabel
         for buku in data_buku:
             self.view.tabel.insert(
-                "", "end",
+                "",
+                "end",
                 values=(
-                    buku['id_buku'],
-                    buku['judul'],
-                    buku['penulis'],
-                    buku['tahun_terbit']
+                    buku["id_buku"],
+                    buku["judul"],
+                    buku["penulis"],
+                    buku["tahun_terbit"]
                 )
             )
 
     def simpan_data(self):
-        # Mengambil teks dari kotak input di View
-        judul = self.view.entry_judul.get()
-        penulis = self.view.entry_penulis.get()
-        tahun = self.view.entry_tahun.get()
+        # Mengambil input dari form
+        judul = self.view.entry_judul.get().strip()
+        penulis = self.view.entry_penulis.get().strip()
+        tahun = self.view.entry_tahun.get().strip()
 
-        # Validasi Form Kosong
+        # Validasi input
         if not judul or not penulis or not tahun:
             messagebox.showwarning(
-                "Peringatan", "Semua kolom form harus diisi!"
+                "Peringatan",
+                "Semua kolom form harus diisi!"
             )
             return
 
-        # Mengirim data ke Model untuk disimpan
-        berhasil = self.model.create_buku(judul, penulis, tahun)
+        # Menyimpan data melalui Model
+        berhasil = self.model.create_buku(
+            judul, penulis, tahun
+        )
 
         if berhasil:
-            messagebox.showinfo("Sukses", "Data buku berhasil disimpan!")
+            messagebox.showinfo(
+                "Sukses",
+                "Data buku berhasil disimpan!"
+            )
 
-            # Bersihkan form input
-            self.view.entry_judul.delete(0, 'end')
-            self.view.entry_penulis.delete(0, 'end')
-            self.view.entry_tahun.delete(0, 'end')
-
-            # Muat ulang tabel agar data terbaru muncul
+            self.bersihkan_form()
             self.muat_data_tabel()
         else:
             messagebox.showerror(
-                "Error", "Terjadi kesalahan saat menyimpan data."
+                "Error",
+                "Terjadi kesalahan saat menyimpan data."
             )
 
-    # Fungsi untuk menjalankan aplikasi
+    def hapus_data(self):
+        # Mengambil baris yang dipilih
+        selected = self.view.tabel.selection()
+
+        if not selected:
+            messagebox.showwarning(
+                "Peringatan",
+                "Pilih data buku yang ingin dihapus!"
+            )
+            return
+
+        # Mengambil ID buku
+        item = self.view.tabel.item(selected[0])
+        id_buku = item["values"][0]
+
+        # Meminta konfirmasi
+        konfirmasi = messagebox.askyesno(
+            "Konfirmasi",
+            "Yakin ingin menghapus data buku ini?"
+        )
+
+        if not konfirmasi:
+            return
+
+        # Menghapus data melalui Model
+        berhasil = self.model.delete_buku(id_buku)
+
+        if berhasil:
+            messagebox.showinfo(
+                "Sukses",
+                "Data buku berhasil dihapus!"
+            )
+            self.bersihkan_form()
+            self.muat_data_tabel()
+        else:
+            messagebox.showerror(
+                "Error",
+                "Data buku gagal dihapus!"
+            )
+
+    def perbarui_data(self):
+        # Mengambil baris yang dipilih
+        selected = self.view.tabel.selection()
+
+        if not selected:
+            messagebox.showwarning(
+                "Peringatan",
+                "Pilih data buku yang ingin diperbarui!"
+            )
+            return
+
+        # Mengambil ID buku
+        item = self.view.tabel.item(selected[0])
+        id_buku = item["values"][0]
+
+        # Mengambil data baru dari form
+        judul = self.view.entry_judul.get().strip()
+        penulis = self.view.entry_penulis.get().strip()
+        tahun = self.view.entry_tahun.get().strip()
+
+        # Validasi input
+        if not judul or not penulis or not tahun:
+            messagebox.showwarning(
+                "Peringatan",
+                "Semua kolom harus diisi!"
+            )
+            return
+
+        # Memperbarui data melalui Model
+        berhasil = self.model.update_buku(
+            id_buku, judul, penulis, tahun
+        )
+
+        if berhasil:
+            messagebox.showinfo(
+                "Sukses",
+                "Data buku berhasil diperbarui!"
+            )
+            self.bersihkan_form()
+            self.muat_data_tabel()
+        else:
+            messagebox.showerror(
+                "Error",
+                "Data buku gagal diperbarui!"
+            )
+
+    def bersihkan_form(self):
+        # Mengosongkan semua kolom input
+        self.view.entry_judul.delete(0, "end")
+        self.view.entry_penulis.delete(0, "end")
+        self.view.entry_tahun.delete(0, "end")
+
     def run(self):
+        # Menjalankan aplikasi
         self.view.mainloop()
