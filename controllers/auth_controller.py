@@ -1,34 +1,67 @@
-#Ingel_F015
+# ingel_f015
 import tkinter.messagebox as messagebox
-from models.user_model import UserModel
+
 from views.login_view import LoginView
 from controllers.buku_controller import BukuController
 
+
 class AuthController:
     def __init__(self):
-        self.model = UserModel()
+        # Membuat tampilan login
         self.view = LoginView()
-        self.view.btn_login.configure(command=self.proses_login)
+
+        # Menghubungkan tombol login
+        self.view.btn_login.configure(
+            command=self.proses_login
+        )
 
     def proses_login(self):
-        username = self.view.entry_username.get()
-        password = self.view.entry_password.get()
+        # Mengambil username dan password
+        username = self.view.entry_username.get().strip()
+        password = self.view.entry_password.get().strip()
 
+        # Memeriksa input kosong
         if not username or not password:
-            messagebox.showwarning("Peringatan", "Username dan Password wajib diisi!")
+            messagebox.showwarning(
+                "Peringatan",
+                "Username dan password harus diisi!",
+                parent=self.view
+            )
             return
 
-        user = self.model.autentikasi(username, password)
+        # Memeriksa akun petugas
+        if username == "petugas" and password == "admin123":
+            user_role = "admin"
 
-        if user:
-            messagebox.showinfo("Login Berhasil", f"Selamat datang, {user['username']} ({user['role']})!")
-            # Tutup jendela Login
-            self.view.destroy()
-            # Buka jendela Utama Perpustakaan dengan mengirimkan role pengguna
-            app_utama = BukuController(user_role=user['role'])
-            app_utama.run()
+        # Memeriksa akun mahasiswa
+        elif username == "mahasiswa" and password == "user123":
+            user_role = "anggota"
+
         else:
-            messagebox.showerror("Login Gagal", "Username atau Password salah!")
+            messagebox.showerror(
+                "Login Gagal",
+                "Username atau password salah!",
+                parent=self.view
+            )
+            return
+
+        try:
+            # Menutup halaman login
+            self.view.destroy()
+
+            # Membuka halaman perpustakaan sesuai role
+            self.app_utama = BukuController(
+                user_role=user_role
+            )
+
+            self.app_utama.run()
+
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"Gagal membuka aplikasi: {e}"
+            )
 
     def run(self):
+        # Menampilkan halaman login
         self.view.mainloop()
